@@ -1,7 +1,6 @@
-//#define F_CPU 16000000UL
-
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
 //main software structure definitions
 void setup();
@@ -15,6 +14,7 @@ void test2(void);
 //main functions
 #define up(register, port) register |= _BV(port)
 #define down(register, port) register &= ~_BV(port)
+#define toggle(register, port) register ^= _BV(port)
 #define out(register, port) register |= _BV(port)
 #define in(register, port) register &= ~_BV(port)
 #define read_pin(register, port) (register & _BV(port)) == 0 ? 0 : 1
@@ -25,6 +25,7 @@ void serial_send( unsigned char data);
 void serial_init(int baud);
 int read_adc(uint8_t prt);
 void initADC(void);
+void initCTCInterrupt(int frq, int pres);
 
 int main(void)
 {
@@ -37,6 +38,8 @@ int main(void)
 void setup(){
   init();
   down(PORTB, PB5);
+  initCTCInterrupt(2, 256);
+  sei();
 }
 
 void loop(){
@@ -64,11 +67,31 @@ void test1(void){
     }
 }
 
+ISR(TIMER1_COMPA_vect){
+  toggle(PORTB, PB5);
+}
+
 void init(){
   initADC();
   serial_init(9600);
   out(DDRB, PB5);
-  in(DDRD, PD2);
+  //in(DDRD, PD2);
+}
+
+void initCTCInterrupt(int frq, int pres){
+  int lim = (((16000000 / pres) / frq) - 1);
+
+  if(pres == 1) TCCR1B = (1<<WGM12)|(1<<CS10);
+  else if(pres == 8) TCCR1B = (1<<WGM12)|(1<<CS11);
+  else if(pres == 64) TCCR1B = (1<<WGM12)|(1<<CS11)|(1<<CS10);
+  else if(pres == 256) TCCR1B = (1<<WGM12)|(1<<CS12);
+  else if(pres == 1024) TCCR1B = (1<<WGM12)|(1<<CS12)|(1<<CS10);
+
+  //TCCR1B = (1<<WGM12)|(1<<CS12);
+
+  OCR1A = lim;
+
+  TIMSK1 = (1<<OCIE1A);
 }
 
 void initADC(void){
