@@ -72,19 +72,18 @@ void init(){
 }
 
 void initADC(void){
- ADCSRA |= ((1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0));    //125khz clock
- ADMUX |= (1<<REFS0);                             //5v reff
- ADCSRA |= (1<<ADEN);                             //power ADC
- ADCSRA |= (1<<ADSC);                             //first conversion, not sure why this is nedeed, but this
- //is what avr said, so ... this must be true :)
+ ADCSRA |= ((1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0));
+ ADMUX |= (1<<REFS0);
+ ADCSRA |= (1<<ADEN);
+  ADCSRA |= (1<<ADSC);
 }
 
 int read_adc(uint8_t prt){
-  ADMUX &= 0xF0;                    //clear the last reading
-  ADMUX |= prt;                     //define the channel
-  ADCSRA |= (1<<ADSC);              //convert
-  while(ADCSRA & (1<<ADSC));        //wait for the conversion to finish
-  int val = ADCW;                   //get the value
+  ADMUX &= 0xF0;
+  ADMUX |= prt;
+  ADCSRA |= (1<<ADSC);
+  while(ADCSRA & (1<<ADSC));
+  int val = ADCW;
   return val;
 }
 
